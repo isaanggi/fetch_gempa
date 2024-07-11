@@ -1,137 +1,171 @@
-// Import library
-import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'detail.dart';
+import 'package:flutter/material.dart'; // untuk paket dasar material Flutter
+import 'dart:convert'; // untuk mengelola JSON
+import 'package:http/http.dart' as http; // untuk request HTTP
+import 'models/gempa.dart'; // import model
+import 'arsip.dart'; // import halaman arsip
+import 'detail.dart'; // import halaman detail
 
 void main() {
-  runApp(FetchGempa()); // Menjalankan aplikasi
+  runApp(MyApp());
 }
 
-// Kelas untuk merepresentasikan data gempa
-class Gempa {
-  late String tanggal;
-  late String jam;
-  late String coordinates;
-  late String lintang;
-  late String bujur;
-  late String magnitude;
-  late String kedalaman;
-  late String wilayah;
-  late String potensi;
-
-  // Konstruktor untuk membuat objek Gempa
-  Gempa({
-    required this.tanggal,
-    required this.jam,
-    required this.coordinates,
-    required this.lintang,
-    required this.bujur,
-    required this.magnitude,
-    required this.kedalaman,
-    required this.wilayah,
-    required this.potensi,
-  });
-
-  // Factory method untuk mengonversi JSON menjadi objek Gempa
-  factory Gempa.fromJson(Map<String, dynamic> json) {
-    return Gempa(
-      tanggal: json['Tanggal'],
-      jam: json['Jam'],
-      coordinates: json['Coordinates'],
-      lintang: json['Lintang'],
-      bujur: json['Bujur'],
-      magnitude: json['Magnitude'],
-      kedalaman: json['Kedalaman'],
-      wilayah: json['Wilayah'],
-      potensi: json['Potensi'],
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Fetch Gempa', // Judul
+      theme: ThemeData(
+        primarySwatch: Colors.blue, // Warna tema
+      ),
+      home: GempaScreen(), // Halaman utama
     );
   }
 }
 
-// Kelas utama untuk mengambil dan menampilkan data gempa
-class FetchGempa extends StatefulWidget {
+class GempaScreen extends StatefulWidget {
   @override
-  _FetchGempaState createState() => _FetchGempaState();
+  _GempaScreenState createState() => _GempaScreenState();
 }
 
-// Kelas state yang mengatur tampilan dan logika FetchGempa
-class _FetchGempaState extends State<FetchGempa> {
-  List<Gempa> earthquakes = []; // List untuk menyimpan data gempa
+class _GempaScreenState extends State<GempaScreen> {
+  late Future<Gempa> _baruGempa; // untuk data gempa terbaru
+  late Future<List<Gempa>> _arsipGempa; // untuk data arsip gempa
 
   @override
   void initState() {
     super.initState();
-    // Memuat data gempa saat widget pertama kali diinisialisasi
-    fetchGempaData();
+    _baruGempa = fetchBaruGempa();
+    _arsipGempa = fetchArsipGempa();
   }
 
-  // Fungsi untuk Memuat data gempa dari API BMKG
-  Future<void> fetchGempaData() async {
-    // Mengambil data dari URL API BMKG
+  Future<Gempa> fetchBaruGempa() async {
+    // HTTP GET request ke endpoint untuk gempa terbaru
+    final response = await http
+        .get(Uri.parse('https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json'));
+
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body); // Mendekode response JSON
+      final gempaData = jsonData['Infogempa']['gempa']; // Mendapatkan data
+
+      return Gempa.fromJson(gempaData);
+    } else {
+      // Jika gagal
+      throw Exception('Gagal untuk load Gempa Terbaru'); // Exception error
+    }
+  }
+
+  Future<List<Gempa>> fetchArsipGempa() async {
+    // HTTP GET request ke endpoint untuk arsip gempa
     final response = await http.get(
         Uri.parse('https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json'));
 
     if (response.statusCode == 200) {
-      List<Gempa> temp = []; // List sementara untuk menyimpan data gempa
-      final jsonData = json.decode(response.body); // Dekode response JSON
-      final gempa =
-          // Mendapatkan daftar data gempa
-          jsonData['Infogempa']['gempa'];
-      for (var item in gempa) {
-        // Menambahkan data gempa ke dalam list sementara
-        temp.add(Gempa.fromJson(item));
-      }
-      setState(() {
-        // Menyimpan list data gempa ke dalam state dan memperbarui tampilan
-        earthquakes = temp;
-      });
+      final jsonData = json.decode(response.body);
+      final List<dynamic> gempasData = jsonData['Infogempa']['gempa'];
+
+      return gempasData.map((e) => Gempa.fromJson(e)).toList();
     } else {
-      throw Exception(
-          // Exception jika gagal memuat data
-          'Failed to load data');
+      throw Exception('Gagal untuk load Arsip Gempa');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('Fetch Gempa'),
-          backgroundColor: Colors.green,
-        ),
-        // Membuat list
-        body: ListView.builder(
-          // Menyesuaikan perhitungan itemCount
-          itemCount: earthquakes.isEmpty ? 0 : earthquakes.length * 2 - 1,
-          itemBuilder: (BuildContext context, int index) {
-            if (index.isOdd) return Divider(); // Menambahkan pembatas
-            final int itemIndex = index ~/ 2; // Menghitung indeks item
-            return ListTile(
-              title: Text('Tanggal: ${earthquakes[itemIndex].tanggal}'),
-              subtitle: Text('Wilayah: ${earthquakes[itemIndex].wilayah}'),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Fetch Gempa'),
+      ),
+      drawer: Drawer(
+        // Untuk menu
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Text(
+                'Menu',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ListTile(
+              title: Text('Home'),
               onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: Text('Archive'),
+              onTap: () {
+                Navigator.pop(context);
                 Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DetailPage(
-                      tanggal: earthquakes[itemIndex].tanggal,
-                      jam: earthquakes[itemIndex].jam,
-                      coordinates: earthquakes[itemIndex].coordinates,
-                      lintang: earthquakes[itemIndex].lintang,
-                      bujur: earthquakes[itemIndex].bujur,
-                      magnitude: earthquakes[itemIndex].magnitude,
-                      kedalaman: earthquakes[itemIndex].kedalaman,
-                      wilayah: earthquakes[itemIndex].wilayah,
-                      potensi: earthquakes[itemIndex].potensi,
-                    ),
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            ArsipScreen(arsipGempa: _arsipGempa)));
+              },
+            ),
+          ],
+        ),
+      ),
+      body: OrientationBuilder(
+        builder: (context, orientation) {
+          return FutureBuilder<Gempa>(
+            future: _baruGempa,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (snapshot.hasData) {
+                final gempa = snapshot.data!;
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Magnitude: ${gempa.magnitude}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 5), // Jarak 5 piksel
+                      Text('Tanggal: ${gempa.tanggal}'), // Tanggal gempa
+                      SizedBox(height: 5),
+                      Text('Jam: ${gempa.jam}'),
+                      SizedBox(height: 5),
+                      Text('Koordinat: ${gempa.coordinates}'),
+                      SizedBox(height: 5),
+                      Text('Kedalaman: ${gempa.kedalaman}'),
+                      SizedBox(height: 5),
+                      Text('Wilayah: ${gempa.wilayah}'),
+                      SizedBox(height: 5),
+                      Text('Potensi: ${gempa.potensi}'),
+                      SizedBox(height: 5),
+                      Text('Dirasakan: ${gempa.dirasakan}'),
+                      SizedBox(height: 5),
+                      if (gempa.shakemap.isNotEmpty)
+                        Image.network(
+                          'https://data.bmkg.go.id/DataMKG/TEWS/${gempa.shakemap}',
+                          errorBuilder: (context, error, stackTrace) =>
+                              Text('Gagal untuk load Shakemap Gempa'),
+                        ),
+                    ],
                   ),
                 );
-              },
-            );
-          },
-        ),
+              } else {
+                return Center(child: Text('Tidak ada Data Gempa'));
+              }
+            },
+          );
+        },
       ),
     );
   }

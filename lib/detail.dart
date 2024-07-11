@@ -1,51 +1,43 @@
-// Halaman detail gempa
 import 'package:flutter/material.dart';
+import 'models/gempa.dart';
 
 class DetailPage extends StatelessWidget {
-  final String tanggal;
-  final String jam;
-  final String coordinates;
-  final String lintang;
-  final String bujur;
-  final String magnitude;
-  final String kedalaman;
-  final String wilayah;
-  final String potensi;
+  final Gempa gempa;
 
-  const DetailPage({
-    Key? key,
-    required this.tanggal,
-    required this.jam,
-    required this.coordinates,
-    required this.lintang,
-    required this.bujur,
-    required this.magnitude,
-    required this.kedalaman,
-    required this.wilayah,
-    required this.potensi,
-  }) : super(key: key);
+  const DetailPage({Key? key, required this.gempa}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Detail Gempa'),
-        backgroundColor: Colors.green,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Tanggal: $tanggal'),
-            Text('Jam: $jam'),
-            Text('Coordinates: $coordinates'),
-            Text('Lintang: $lintang'),
-            Text('Bujur: $bujur'),
-            Text('Magnitude: $magnitude'),
-            Text('Kedalaman: $kedalaman'),
-            Text('Wilayah: $wilayah'),
-            Text('Potensi: $potensi'),
+            Text(
+              'Magnitude: ${gempa.magnitude}',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 5),
+            Text('Tanggal: ${gempa.tanggal}'),
+            SizedBox(height: 5),
+            Text('Jam: ${gempa.jam}'),
+            SizedBox(height: 5),
+            Text('Koordinat: ${gempa.coordinates}'),
+            SizedBox(height: 5),
+            Text('Lintang: ${gempa.lintang}'),
+            SizedBox(height: 5),
+            Text('Bujur: ${gempa.bujur}'),
+            SizedBox(height: 5),
+            Text('Kedalaman: ${gempa.kedalaman}'),
+            SizedBox(height: 5),
+            Text('Wilayah: ${gempa.wilayah}'),
+            SizedBox(height: 5),
+            Text('Potensi: ${gempa.potensi}'),
+            SizedBox(height: 5),
           ],
         ),
       ),
