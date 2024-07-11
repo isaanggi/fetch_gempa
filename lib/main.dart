@@ -73,7 +73,12 @@ class _GempaScreenState extends State<GempaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Fetch Gempa'),
+        title: Text(
+          'Fetch Gempa',
+          style: TextStyle(color: Colors.white),
+        ),
+        iconTheme: IconThemeData(color: Colors.white),
+        backgroundColor: Colors.blue,
       ),
       drawer: Drawer(
         // Untuk menu
@@ -112,21 +117,22 @@ class _GempaScreenState extends State<GempaScreen> {
           ],
         ),
       ),
-      body: OrientationBuilder(
-        builder: (context, orientation) {
-          return FutureBuilder<Gempa>(
-            future: _baruGempa,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              } else if (snapshot.hasData) {
-                final gempa = snapshot.data!;
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FutureBuilder<Gempa>(
+              future: _baruGempa,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.hasData) {
+                  final gempa = snapshot.data!;
 
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
+                  return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
@@ -143,6 +149,10 @@ class _GempaScreenState extends State<GempaScreen> {
                       SizedBox(height: 5),
                       Text('Koordinat: ${gempa.coordinates}'),
                       SizedBox(height: 5),
+                      Text('Lintang: ${gempa.lintang}'),
+                      SizedBox(height: 5),
+                      Text('Bujur: ${gempa.bujur}'),
+                      SizedBox(height: 5),
                       Text('Kedalaman: ${gempa.kedalaman}'),
                       SizedBox(height: 5),
                       Text('Wilayah: ${gempa.wilayah}'),
@@ -158,14 +168,26 @@ class _GempaScreenState extends State<GempaScreen> {
                               Text('Gagal untuk load Shakemap Gempa'),
                         ),
                     ],
-                  ),
-                );
-              } else {
-                return Center(child: Text('Tidak ada Data Gempa'));
-              }
-            },
-          );
-        },
+                  );
+                } else {
+                  return Center(child: Text('Tidak ada Data Gempa'));
+                }
+              },
+            ),
+            SizedBox(height: 20),
+            Align(
+              alignment: Alignment.center,
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _baruGempa = fetchBaruGempa(); // Memuat ulang data gempa
+                  });
+                },
+                child: Text('Refresh'), // Tombol refresh
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
